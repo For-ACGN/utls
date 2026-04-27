@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	// "crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -14,8 +13,9 @@ import (
 	"os"
 	"time"
 
-	tls "github.com/For-ACGN/utls"
 	"golang.org/x/net/http2"
+
+	"github.com/For-ACGN/utls"
 )
 
 var (
@@ -49,7 +49,7 @@ func HttpGetCustom(hostname string, addr string) (*http.Response, error) {
 		return nil, err
 	}
 
-	config := tls.Config{
+	config := utls.Config{
 		ServerName:                     hostname,
 		KeyLogWriter:                   klw,
 		EncryptedClientHelloConfigList: echConf,
@@ -58,7 +58,7 @@ func HttpGetCustom(hostname string, addr string) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	uTlsConn := tls.UClient(dialConn, &config, tls.HelloGolang)
+	uTlsConn := utls.UClient(dialConn, &config, utls.HelloGolang)
 	// uTlsConn := tls.Client(dialConn, &config)
 	defer uTlsConn.Close()
 

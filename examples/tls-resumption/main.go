@@ -6,20 +6,20 @@ import (
 	"strings"
 	"time"
 
-	tls "github.com/For-ACGN/utls"
+	"github.com/For-ACGN/utls"
 )
 
 type ClientSessionCache struct {
-	sessionKeyMap map[string]*tls.ClientSessionState
+	sessionKeyMap map[string]*utls.ClientSessionState
 }
 
-func NewClientSessionCache() tls.ClientSessionCache {
+func NewClientSessionCache() utls.ClientSessionCache {
 	return &ClientSessionCache{
-		sessionKeyMap: make(map[string]*tls.ClientSessionState),
+		sessionKeyMap: make(map[string]*utls.ClientSessionState),
 	}
 }
 
-func (csc *ClientSessionCache) Get(sessionKey string) (session *tls.ClientSessionState, ok bool) {
+func (csc *ClientSessionCache) Get(sessionKey string) (session *utls.ClientSessionState, ok bool) {
 	if session, ok = csc.sessionKeyMap[sessionKey]; ok {
 		fmt.Printf("Getting session for %s\n", sessionKey)
 		return session, true
@@ -28,7 +28,7 @@ func (csc *ClientSessionCache) Get(sessionKey string) (session *tls.ClientSessio
 	return nil, false
 }
 
-func (csc *ClientSessionCache) Put(sessionKey string, cs *tls.ClientSessionState) {
+func (csc *ClientSessionCache) Put(sessionKey string, cs *utls.ClientSessionState) {
 	if cs == nil {
 		fmt.Printf("Deleting session for %s\n", sessionKey)
 		delete(csc.sessionKeyMap, sessionKey)
@@ -46,7 +46,7 @@ const (
 	ticketResumption ResumptionType = 2
 )
 
-func runResumptionCheck(helloID tls.ClientHelloID, getCustomSpec func() *tls.ClientHelloSpec, expectResumption ResumptionType, serverAddr string, retry int, verbose bool) {
+func runResumptionCheck(helloID utls.ClientHelloID, getCustomSpec func() *utls.ClientHelloSpec, expectResumption ResumptionType, serverAddr string, retry int, verbose bool) {
 	fmt.Printf("checking: hello [%s], expectResumption [%v], serverAddr [%s]\n", helloID.Client, expectResumption, serverAddr)
 	csc := NewClientSessionCache()
 	tcpConn, err := net.Dial("tcp", serverAddr)
@@ -57,7 +57,7 @@ func runResumptionCheck(helloID tls.ClientHelloID, getCustomSpec func() *tls.Cli
 	// Everything below this line is brought to you by uTLS API, enjoy!
 
 	// use chs
-	tlsConn := tls.UClient(tcpConn, &tls.Config{
+	tlsConn := utls.UClient(tcpConn, &utls.Config{
 		ServerName: strings.Split(serverAddr, ":")[0],
 		// NextProtos:         []string{"h2", "http/1.1"},
 		ClientSessionCache: csc, // set this so session tickets will be saved
@@ -82,11 +82,11 @@ func runResumptionCheck(helloID tls.ClientHelloID, getCustomSpec func() *tls.Cli
 			fmt.Println("Handshake complete")
 			fmt.Printf("TLS Version: %04x\n", tlsVer)
 		}
-		if tlsVer == tls.VersionTLS13 {
+		if tlsVer == utls.VersionTLS13 {
 			if verbose {
 				fmt.Printf("Expecting PSK resumption\n")
 			}
-		} else if tlsVer == tls.VersionTLS12 {
+		} else if tlsVer == utls.VersionTLS12 {
 			if verbose {
 				fmt.Printf("Expecting session ticket resumption\n")
 			}
@@ -116,7 +116,7 @@ func runResumptionCheck(helloID tls.ClientHelloID, getCustomSpec func() *tls.Cli
 			panic(err)
 		}
 
-		tlsConnPSK := tls.UClient(tcpConnPSK, &tls.Config{
+		tlsConnPSK := utls.UClient(tcpConnPSK, &utls.Config{
 			ServerName:         strings.Split(serverAddr, ":")[0],
 			ClientSessionCache: csc,
 			OmitEmptyPsk:       true,
@@ -149,11 +149,11 @@ func runResumptionCheck(helloID tls.ClientHelloID, getCustomSpec func() *tls.Cli
 				panic("Tls version changed unexpectedly on the second connection")
 			}
 
-			if tlsVer == tls.VersionTLS13 && tlsConnPSK.HandshakeState.State13.UsingPSK {
+			if tlsVer == utls.VersionTLS13 && tlsConnPSK.HandshakeState.State13.UsingPSK {
 				fmt.Println("[PSK used]")
 				resumption = pskResumption
 				break
-			} else if tlsVer == tls.VersionTLS12 && tlsConnPSK.DidTls12Resume() {
+			} else if tlsVer == utls.VersionTLS12 && tlsConnPSK.DidTls12Resume() {
 				fmt.Println("[session ticket used]")
 				resumption = ticketResumption
 				break
@@ -173,7 +173,7 @@ func main() {
 	tls13Url := "www.microsoft.com:443"
 	tls12Url1 := "spocs.getpocket.com:443"
 	tls12Url2 := "marketplace.visualstudio.com:443"
-	runResumptionCheck(tls.HelloChrome_100, nil, noResumption, tls13Url, 3, false) // no-resumption + utls
+	runResumptionCheck(utls.HelloChrome_100, nil, noResumption, tls13Url, 3, false) // no-resumption + utls
 	func() {
 		defer func() {
 			if err := recover(); err == nil {
@@ -181,17 +181,17 @@ func main() {
 			}
 		}()
 
-		runResumptionCheck(tls.HelloCustom, func() *tls.ClientHelloSpec {
-			spec, _ := tls.UTLSIdToSpec(tls.HelloChrome_100)
+		runResumptionCheck(utls.HelloCustom, func() *utls.ClientHelloSpec {
+			spec, _ := utls.UTLSIdToSpec(utls.HelloChrome_100)
 			return &spec
 		}, noResumption, tls13Url, 3, false) // no-resumption + utls custom + no psk extension
 	}()
-	runResumptionCheck(tls.HelloChrome_100_PSK, nil, pskResumption, tls13Url, 1, false) // psk + utls
-	runResumptionCheck(tls.HelloGolang, nil, pskResumption, tls13Url, 1, false)         // psk + crypto/tls
+	runResumptionCheck(utls.HelloChrome_100_PSK, nil, pskResumption, tls13Url, 1, false) // psk + utls
+	runResumptionCheck(utls.HelloGolang, nil, pskResumption, tls13Url, 1, false)         // psk + crypto/tls
 
-	runResumptionCheck(tls.HelloChrome_100_PSK, nil, ticketResumption, tls12Url1, 10, false) // session ticket + utls
-	runResumptionCheck(tls.HelloGolang, nil, ticketResumption, tls12Url1, 10, false)         // session ticket + crypto/tls
-	runResumptionCheck(tls.HelloChrome_100_PSK, nil, ticketResumption, tls12Url2, 10, false) // session ticket + utls
-	runResumptionCheck(tls.HelloGolang, nil, ticketResumption, tls12Url2, 10, false)         // session ticket + crypto/tls
+	runResumptionCheck(utls.HelloChrome_100_PSK, nil, ticketResumption, tls12Url1, 10, false) // session ticket + utls
+	runResumptionCheck(utls.HelloGolang, nil, ticketResumption, tls12Url1, 10, false)         // session ticket + crypto/tls
+	runResumptionCheck(utls.HelloChrome_100_PSK, nil, ticketResumption, tls12Url2, 10, false) // session ticket + utls
+	runResumptionCheck(utls.HelloGolang, nil, ticketResumption, tls12Url2, 10, false)         // session ticket + crypto/tls
 
 }

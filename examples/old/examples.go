@@ -10,8 +10,9 @@ import (
 	"net/url"
 	"time"
 
-	tls "github.com/For-ACGN/utls"
 	"golang.org/x/net/http2"
+
+	"github.com/For-ACGN/utls"
 )
 
 var (
@@ -25,23 +26,23 @@ var requestHostname = "facebook.com" // speaks http2 and TLS 1.3
 var requestAddr = "31.13.72.36:443"
 
 func HttpGetDefault(hostname string, addr string) (*http.Response, error) {
-	config := tls.Config{ServerName: hostname}
+	config := utls.Config{ServerName: hostname}
 	dialConn, err := net.DialTimeout("tcp", addr, dialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	tlsConn := tls.Client(dialConn, &config)
+	tlsConn := utls.Client(dialConn, &config)
 	defer tlsConn.Close()
 	return httpGetOverConn(tlsConn, tlsConn.ConnectionState().NegotiatedProtocol)
 }
 
-func HttpGetByHelloID(hostname string, addr string, helloID tls.ClientHelloID) (*http.Response, error) {
-	config := tls.Config{ServerName: hostname}
+func HttpGetByHelloID(hostname string, addr string, helloID utls.ClientHelloID) (*http.Response, error) {
+	config := utls.Config{ServerName: hostname}
 	dialConn, err := net.DialTimeout("tcp", addr, dialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	uTlsConn := tls.UClient(dialConn, &config, helloID)
+	uTlsConn := utls.UClient(dialConn, &config, helloID)
 	defer uTlsConn.Close()
 
 	err = uTlsConn.Handshake()
@@ -54,12 +55,12 @@ func HttpGetByHelloID(hostname string, addr string, helloID tls.ClientHelloID) (
 
 // this example generates a randomized fingeprint, then re-uses it in a follow-up connection
 func HttpGetConsistentRandomized(hostname string, addr string) (*http.Response, error) {
-	config := tls.Config{ServerName: hostname}
+	config := utls.Config{ServerName: hostname}
 	tcpConn, err := net.DialTimeout("tcp", addr, dialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	uTlsConn := tls.UClient(tcpConn, &config, tls.HelloRandomized)
+	uTlsConn := utls.UClient(tcpConn, &config, utls.HelloRandomized)
 	defer uTlsConn.Close()
 	err = uTlsConn.Handshake()
 	if err != nil {
@@ -73,7 +74,7 @@ func HttpGetConsistentRandomized(hostname string, addr string) (*http.Response, 
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	uTlsConn2 := tls.UClient(tcpConn2, &config, uTlsConn.ClientHelloID)
+	uTlsConn2 := utls.UClient(tcpConn2, &config, uTlsConn.ClientHelloID)
 	defer uTlsConn2.Close()
 	err = uTlsConn2.Handshake()
 	if err != nil {
@@ -88,7 +89,7 @@ func HttpGetExplicitRandom(hostname string, addr string) (*http.Response, error)
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	uTlsConn := tls.UClient(dialConn, nil, tls.HelloGolang)
+	uTlsConn := utls.UClient(dialConn, nil, utls.HelloGolang)
 	defer uTlsConn.Close()
 
 	uTlsConn.SetSNI(hostname) // have to set SNI, if config was nil
@@ -117,12 +118,12 @@ func HttpGetExplicitRandom(hostname string, addr string) (*http.Response, error)
 
 // Note that the server will reject the fake ticket(unless you set up your server to accept them) and do full handshake
 func HttpGetTicket(hostname string, addr string) (*http.Response, error) {
-	config := tls.Config{ServerName: hostname}
+	config := utls.Config{ServerName: hostname}
 	dialConn, err := net.DialTimeout("tcp", addr, dialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	uTlsConn := tls.UClient(dialConn, &config, tls.HelloGolang)
+	uTlsConn := utls.UClient(dialConn, &config, utls.HelloGolang)
 	defer uTlsConn.Close()
 
 	err = uTlsConn.BuildHandshakeState()
@@ -135,8 +136,8 @@ func HttpGetTicket(hostname string, addr string) (*http.Response, error) {
 	copy(masterSecret, []byte("masterSecret is NOT sent over the wire")) // you may use it for real security
 
 	// Create a session ticket that wasn't actually issued by the server.
-	sessionState := tls.MakeClientSessionState(sessionTicket, uint16(tls.VersionTLS12),
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+	sessionState := utls.MakeClientSessionState(sessionTicket, uint16(utls.VersionTLS12),
+		utls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		masterSecret,
 		nil, nil)
 
@@ -156,21 +157,21 @@ func HttpGetTicket(hostname string, addr string) (*http.Response, error) {
 }
 
 // Note that the server will reject the fake ticket(unless you set up your server to accept them) and do full handshake
-func HttpGetTicketHelloID(hostname string, addr string, helloID tls.ClientHelloID) (*http.Response, error) {
-	config := tls.Config{ServerName: hostname}
+func HttpGetTicketHelloID(hostname string, addr string, helloID utls.ClientHelloID) (*http.Response, error) {
+	config := utls.Config{ServerName: hostname}
 	dialConn, err := net.DialTimeout("tcp", addr, dialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	uTlsConn := tls.UClient(dialConn, &config, helloID)
+	uTlsConn := utls.UClient(dialConn, &config, helloID)
 	defer uTlsConn.Close()
 
 	masterSecret := make([]byte, 48)
 	copy(masterSecret, []byte("masterSecret is NOT sent over the wire")) // you may use it for real security
 
 	// Create a session ticket that wasn't actually issued by the server.
-	sessionState := tls.MakeClientSessionState(sessionTicket, uint16(tls.VersionTLS12),
-		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+	sessionState := utls.MakeClientSessionState(sessionTicket, uint16(utls.VersionTLS12),
+		utls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		masterSecret,
 		nil, nil)
 
@@ -187,58 +188,58 @@ func HttpGetTicketHelloID(hostname string, addr string, helloID tls.ClientHelloI
 }
 
 func HttpGetCustom(hostname string, addr string) (*http.Response, error) {
-	config := tls.Config{ServerName: hostname}
+	config := utls.Config{ServerName: hostname}
 	dialConn, err := net.DialTimeout("tcp", addr, dialTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("net.DialTimeout error: %+v", err)
 	}
-	uTlsConn := tls.UClient(dialConn, &config, tls.HelloCustom)
+	uTlsConn := utls.UClient(dialConn, &config, utls.HelloCustom)
 	defer uTlsConn.Close()
 
 	// do not use this particular spec in production
 	// make sure to generate a separate copy of ClientHelloSpec for every connection
-	spec := tls.ClientHelloSpec{
-		TLSVersMax: tls.VersionTLS13,
-		TLSVersMin: tls.VersionTLS10,
+	spec := utls.ClientHelloSpec{
+		TLSVersMax: utls.VersionTLS13,
+		TLSVersMin: utls.VersionTLS10,
 		CipherSuites: []uint16{
-			tls.GREASE_PLACEHOLDER,
-			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-			tls.TLS_AES_128_GCM_SHA256, // tls 1.3
-			tls.FAKE_TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			utls.GREASE_PLACEHOLDER,
+			utls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+			utls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			utls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+			utls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+			utls.TLS_AES_128_GCM_SHA256, // tls 1.3
+			utls.FAKE_TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
+			utls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			utls.TLS_RSA_WITH_AES_256_CBC_SHA,
 		},
-		Extensions: []tls.TLSExtension{
-			&tls.SNIExtension{},
-			&tls.SupportedCurvesExtension{Curves: []tls.CurveID{tls.X25519, tls.CurveP256}},
-			&tls.SupportedPointsExtension{SupportedPoints: []byte{0}}, // uncompressed
-			&tls.SessionTicketExtension{},
-			&tls.ALPNExtension{AlpnProtocols: []string{"myFancyProtocol", "http/1.1"}},
-			&tls.SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []tls.SignatureScheme{
-				tls.ECDSAWithP256AndSHA256,
-				tls.ECDSAWithP384AndSHA384,
-				tls.ECDSAWithP521AndSHA512,
-				tls.PSSWithSHA256,
-				tls.PSSWithSHA384,
-				tls.PSSWithSHA512,
-				tls.PKCS1WithSHA256,
-				tls.PKCS1WithSHA384,
-				tls.PKCS1WithSHA512,
-				tls.ECDSAWithSHA1,
-				tls.PKCS1WithSHA1}},
-			&tls.KeyShareExtension{[]tls.KeyShare{
-				{Group: tls.CurveID(tls.GREASE_PLACEHOLDER), Data: []byte{0}},
-				{Group: tls.X25519},
+		Extensions: []utls.TLSExtension{
+			&utls.SNIExtension{},
+			&utls.SupportedCurvesExtension{Curves: []utls.CurveID{utls.X25519, utls.CurveP256}},
+			&utls.SupportedPointsExtension{SupportedPoints: []byte{0}}, // uncompressed
+			&utls.SessionTicketExtension{},
+			&utls.ALPNExtension{AlpnProtocols: []string{"myFancyProtocol", "http/1.1"}},
+			&utls.SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []utls.SignatureScheme{
+				utls.ECDSAWithP256AndSHA256,
+				utls.ECDSAWithP384AndSHA384,
+				utls.ECDSAWithP521AndSHA512,
+				utls.PSSWithSHA256,
+				utls.PSSWithSHA384,
+				utls.PSSWithSHA512,
+				utls.PKCS1WithSHA256,
+				utls.PKCS1WithSHA384,
+				utls.PKCS1WithSHA512,
+				utls.ECDSAWithSHA1,
+				utls.PKCS1WithSHA1}},
+			&utls.KeyShareExtension{[]utls.KeyShare{
+				{Group: utls.CurveID(utls.GREASE_PLACEHOLDER), Data: []byte{0}},
+				{Group: utls.X25519},
 			}},
-			&tls.PSKKeyExchangeModesExtension{[]uint8{1}}, // pskModeDHE
-			&tls.SupportedVersionsExtension{[]uint16{
-				tls.VersionTLS13,
-				tls.VersionTLS12,
-				tls.VersionTLS11,
-				tls.VersionTLS10}},
+			&utls.PSKKeyExchangeModesExtension{[]uint8{1}}, // pskModeDHE
+			&utls.SupportedVersionsExtension{[]uint16{
+				utls.VersionTLS13,
+				utls.VersionTLS12,
+				utls.VersionTLS11,
+				utls.VersionTLS10}},
 		},
 		GetSessionID: nil,
 	}
@@ -256,14 +257,14 @@ func HttpGetCustom(hostname string, addr string) (*http.Response, error) {
 	return httpGetOverConn(uTlsConn, uTlsConn.ConnectionState().NegotiatedProtocol)
 }
 
-var roller *tls.Roller
+var roller *utls.Roller
 
 // this example creates a new roller for each function call,
 // however it is advised to reuse the Roller
 func HttpGetGoogleWithRoller() (*http.Response, error) {
 	var err error
 	if roller == nil {
-		roller, err = tls.NewRoller()
+		roller, err = utls.NewRoller()
 		if err != nil {
 			return nil, err
 		}
@@ -291,7 +292,7 @@ func forgeConn() {
 		return
 	}
 
-	clientUtls := tls.UClient(clientTcp, nil, tls.HelloGolang)
+	clientUtls := utls.UClient(clientTcp, nil, utls.HelloGolang)
 	defer clientUtls.Close()
 	clientUtls.SetSNI("google.com") // have to set SNI, if config was nil
 	err = clientUtls.Handshake()
@@ -306,7 +307,7 @@ func forgeConn() {
 	hs := clientUtls.HandshakeState
 
 	// TODO: Redesign this part to use TLS 1.3
-	serverTls := tls.MakeConnWithCompleteHandshake(serverConn, hs.ServerHello.Vers, hs.ServerHello.CipherSuite,
+	serverTls := utls.MakeConnWithCompleteHandshake(serverConn, hs.ServerHello.Vers, hs.ServerHello.CipherSuite,
 		hs.MasterSecret, hs.Hello.Random, hs.ServerHello.Random, false)
 	if serverTls == nil {
 		fmt.Printf("tls.MakeConnWithCompleteHandshake error, unsupported TLS protocol?")
@@ -355,7 +356,7 @@ func main() {
 		fmt.Printf("#> HttpGetDefault response: %+s\n", dumpResponseNoBody(response))
 	}
 
-	response, err = HttpGetByHelloID(requestHostname, requestAddr, tls.HelloChrome_62)
+	response, err = HttpGetByHelloID(requestHostname, requestAddr, utls.HelloChrome_62)
 	if err != nil {
 		fmt.Printf("#> HttpGetByHelloID(HelloChrome_62) failed: %+v\n", err)
 	} else {
@@ -383,7 +384,7 @@ func main() {
 		fmt.Printf("#> HttpGetTicket response: %+s\n", dumpResponseNoBody(response))
 	}
 
-	response, err = HttpGetTicketHelloID(requestHostname, requestAddr, tls.HelloFirefox_56)
+	response, err = HttpGetTicketHelloID(requestHostname, requestAddr, utls.HelloFirefox_56)
 	if err != nil {
 		fmt.Printf("#> HttpGetTicketHelloID(HelloFirefox_56) failed: %+v\n", err)
 	} else {
