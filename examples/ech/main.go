@@ -4,7 +4,6 @@ import (
 	"bufio"
 	// "crypto/tls"
 	"encoding/base64"
-
 	"errors"
 	"fmt"
 	"io"
@@ -15,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	tls "github.com/refraction-networking/utls"
+	tls "github.com/For-ACGN/utls"
 	"golang.org/x/net/http2"
 )
 

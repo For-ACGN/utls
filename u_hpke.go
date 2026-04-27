@@ -1,7 +1,7 @@
 package utls
 
 import (
-	"github.com/refraction-networking/utls/internal/hpke"
+	"github.com/For-ACGN/utls/internal/hpke"
 )
 
 type HPKERawPublicKey = []byte
