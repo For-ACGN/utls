@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tls
+package utls
 
 import (
 	"bytes"
@@ -81,12 +81,12 @@ func TestUTLSHandshakeClientParrotChrome_70(t *testing.T) {
 	testUTLSHandshakeClientTLS13_AES_128_GCM_SHA256(t, hello)
 	testUTLSHandshakeClientTLS13_AES_256_GCM_SHA384(t, hello)
 	testUTLSHandshakeClientTLS13_CHACHA20_POLY1305_SHA256(t, hello)
-	//testUTLSHandshakeClientECDHE_ECDSA_AES128_GCM_SHA256(t, hello)
+	// testUTLSHandshakeClientECDHE_ECDSA_AES128_GCM_SHA256(t, hello)
 	testUTLSHandshakeClientECDHE_RSA_AES128_GCM_SHA256(t, hello)
-	//testUTLSHandshakeClientECDHE_ECDSA_AES256_GCM_SHA256(t, hello)
+	// testUTLSHandshakeClientECDHE_ECDSA_AES256_GCM_SHA256(t, hello)
 	testUTLSHandshakeClientECDHE_RSA_AES256_GCM_SHA256(t, hello)
 
-	//testUTLSHandshakeClientECDHE_ECDSA_WITH_CHACHA20_POLY1305(t, hello)
+	// testUTLSHandshakeClientECDHE_ECDSA_WITH_CHACHA20_POLY1305(t, hello)
 	testUTLSHandshakeClientECDHE_RSA_WITH_CHACHA20_POLY1305(t, hello)
 
 	testUTLSHandshakeClientECDHE_RSA_AES128_CBC_SHA(t, hello)
@@ -100,12 +100,12 @@ func TestUTLSHandshakeClientParrotChrome_58(t *testing.T) {
 	// TODO: EC tests below are disabled because latest version of reference OpenSSL doesn't support p256 nor p384
 	// nor X25519 and I can't find configuration flag to enable it. Therefore I can't record replays.
 
-	//testUTLSHandshakeClientECDHE_ECDSA_AES128_GCM_SHA256(t, hello)
+	// testUTLSHandshakeClientECDHE_ECDSA_AES128_GCM_SHA256(t, hello)
 	testUTLSHandshakeClientECDHE_RSA_AES128_GCM_SHA256(t, hello)
-	//testUTLSHandshakeClientECDHE_ECDSA_AES256_GCM_SHA256(t, hello)
+	// testUTLSHandshakeClientECDHE_ECDSA_AES256_GCM_SHA256(t, hello)
 	testUTLSHandshakeClientECDHE_RSA_AES256_GCM_SHA256(t, hello)
 
-	//testUTLSHandshakeClientECDHE_ECDSA_WITH_CHACHA20_POLY1305(t, hello)
+	// testUTLSHandshakeClientECDHE_ECDSA_WITH_CHACHA20_POLY1305(t, hello)
 	testUTLSHandshakeClientECDHE_RSA_WITH_CHACHA20_POLY1305(t, hello)
 
 	testUTLSHandshakeClientECDHE_RSA_AES128_CBC_SHA(t, hello)
@@ -127,7 +127,7 @@ func TestUTLSHandshakeClientParrotFirefox_63(t *testing.T) {
 	testUTLSHandshakeClientECDHE_ECDSA_WITH_CHACHA20_POLY1305(t, hello)
 	testUTLSHandshakeClientECDHE_RSA_WITH_CHACHA20_POLY1305(t, hello)
 
-	//testUTLSHandshakeClientECDHE_ECDSA_AES256_GCM_SHA256(t, hello) TODO: enable when OpenSSL supports it
+	// testUTLSHandshakeClientECDHE_ECDSA_AES256_GCM_SHA256(t, hello) TODO: enable when OpenSSL supports it
 	testUTLSHandshakeClientECDHE_RSA_AES256_GCM_SHA256(t, hello)
 
 	testUTLSHandshakeClientECDHE_ECDSA_AES256_CBC_SHA(t, hello)
@@ -146,7 +146,7 @@ func TestUTLSHandshakeClientParrotFirefox_55(t *testing.T) {
 	testUTLSHandshakeClientECDHE_ECDSA_WITH_CHACHA20_POLY1305(t, hello)
 	testUTLSHandshakeClientECDHE_RSA_WITH_CHACHA20_POLY1305(t, hello)
 
-	//testUTLSHandshakeClientECDHE_ECDSA_AES256_GCM_SHA256(t, hello) TODO: enable when OpenSSL supports it
+	// testUTLSHandshakeClientECDHE_ECDSA_AES256_GCM_SHA256(t, hello) TODO: enable when OpenSSL supports it
 	testUTLSHandshakeClientECDHE_RSA_AES256_GCM_SHA256(t, hello)
 
 	testUTLSHandshakeClientECDHE_ECDSA_AES256_CBC_SHA(t, hello)

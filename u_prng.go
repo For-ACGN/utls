@@ -9,7 +9,7 @@
 // This code is a pared down version of:
 // https://github.com/Psiphon-Labs/psiphon-tunnel-core/blob/158caea562287284cc3fa5fcd1b3c97b1addf659/psiphon/common/prng/prng.go
 
-package tls
+package utls
 
 import (
 	crypto_rand "crypto/rand"

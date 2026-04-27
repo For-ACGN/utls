@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tls
+package utls
 
 import (
 	"crypto/ecdh"
@@ -1111,10 +1111,10 @@ func utlsIdToSpec(id ClientHelloID) (ClientHelloSpec, error) {
 				compressionNone,
 			},
 			Extensions: []TLSExtension{
-				&SNIExtension{},                  //server_name
-				&ExtendedMasterSecretExtension{}, //extended_master_secret
-				&RenegotiationInfoExtension{Renegotiation: RenegotiateOnceAsClient}, //extensionRenegotiationInfo
-				&SupportedCurvesExtension{[]CurveID{ //supported_groups
+				&SNIExtension{},                  // server_name
+				&ExtendedMasterSecretExtension{}, // extended_master_secret
+				&RenegotiationInfoExtension{Renegotiation: RenegotiateOnceAsClient}, // extensionRenegotiationInfo
+				&SupportedCurvesExtension{[]CurveID{ // supported_groups
 					X25519,
 					CurveP256,
 					CurveP384,
@@ -1122,14 +1122,14 @@ func utlsIdToSpec(id ClientHelloID) (ClientHelloSpec, error) {
 					CurveID(FakeFFDHE2048),
 					CurveID(FakeFFDHE3072),
 				}},
-				&SupportedPointsExtension{SupportedPoints: []byte{ //ec_point_formats
+				&SupportedPointsExtension{SupportedPoints: []byte{ // ec_point_formats
 					pointFormatUncompressed,
 				}},
 				&SessionTicketExtension{},
-				&ALPNExtension{AlpnProtocols: []string{"h2", "http/1.1"}}, //application_layer_protocol_negotiation
+				&ALPNExtension{AlpnProtocols: []string{"h2", "http/1.1"}}, // application_layer_protocol_negotiation
 				&StatusRequestExtension{},
 				&FakeDelegatedCredentialsExtension{
-					SupportedSignatureAlgorithms: []SignatureScheme{ //signature_algorithms
+					SupportedSignatureAlgorithms: []SignatureScheme{ // signature_algorithms
 						ECDSAWithP256AndSHA256,
 						ECDSAWithP384AndSHA384,
 						ECDSAWithP521AndSHA512,
@@ -1138,15 +1138,15 @@ func utlsIdToSpec(id ClientHelloID) (ClientHelloSpec, error) {
 				},
 				&KeyShareExtension{[]KeyShare{
 					{Group: X25519},
-					{Group: CurveP256}, //key_share
+					{Group: CurveP256}, // key_share
 				}},
 				&SupportedVersionsExtension{[]uint16{
-					VersionTLS13, //supported_versions
+					VersionTLS13, // supported_versions
 					VersionTLS12,
 					VersionTLS11,
 					VersionTLS10,
 				}},
-				&SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []SignatureScheme{ //signature_algorithms
+				&SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []SignatureScheme{ // signature_algorithms
 					ECDSAWithP256AndSHA256,
 					ECDSAWithP384AndSHA384,
 					ECDSAWithP521AndSHA512,
@@ -1159,11 +1159,11 @@ func utlsIdToSpec(id ClientHelloID) (ClientHelloSpec, error) {
 					ECDSAWithSHA1,
 					PKCS1WithSHA1,
 				}},
-				&PSKKeyExchangeModesExtension{[]uint8{ //psk_key_exchange_modes
+				&PSKKeyExchangeModesExtension{[]uint8{ // psk_key_exchange_modes
 					PskModeDHE,
 				}},
-				&FakeRecordSizeLimitExtension{Limit: 0x4001},             //record_size_limit
-				&UtlsPaddingExtension{GetPaddingLen: BoringPaddingStyle}, //padding
+				&FakeRecordSizeLimitExtension{Limit: 0x4001},             // record_size_limit
+				&UtlsPaddingExtension{GetPaddingLen: BoringPaddingStyle}, // padding
 			}}, nil
 	case HelloFirefox_102:
 		return ClientHelloSpec{
@@ -1192,10 +1192,10 @@ func utlsIdToSpec(id ClientHelloID) (ClientHelloSpec, error) {
 				compressionNone,
 			},
 			Extensions: []TLSExtension{
-				&SNIExtension{},                  //server_name
-				&ExtendedMasterSecretExtension{}, //extended_master_secret
-				&RenegotiationInfoExtension{Renegotiation: RenegotiateOnceAsClient}, //extensionRenegotiationInfo
-				&SupportedCurvesExtension{[]CurveID{ //supported_groups
+				&SNIExtension{},                  // server_name
+				&ExtendedMasterSecretExtension{}, // extended_master_secret
+				&RenegotiationInfoExtension{Renegotiation: RenegotiateOnceAsClient}, // extensionRenegotiationInfo
+				&SupportedCurvesExtension{[]CurveID{ // supported_groups
 					X25519,
 					CurveP256,
 					CurveP384,
@@ -1203,14 +1203,14 @@ func utlsIdToSpec(id ClientHelloID) (ClientHelloSpec, error) {
 					CurveID(FakeFFDHE2048),
 					CurveID(FakeFFDHE3072),
 				}},
-				&SupportedPointsExtension{SupportedPoints: []byte{ //ec_point_formats
+				&SupportedPointsExtension{SupportedPoints: []byte{ // ec_point_formats
 					pointFormatUncompressed,
 				}},
 				&SessionTicketExtension{},
-				&ALPNExtension{AlpnProtocols: []string{"h2"}}, //application_layer_protocol_negotiation
+				&ALPNExtension{AlpnProtocols: []string{"h2"}}, // application_layer_protocol_negotiation
 				&StatusRequestExtension{},
 				&FakeDelegatedCredentialsExtension{
-					SupportedSignatureAlgorithms: []SignatureScheme{ //signature_algorithms
+					SupportedSignatureAlgorithms: []SignatureScheme{ // signature_algorithms
 						ECDSAWithP256AndSHA256,
 						ECDSAWithP384AndSHA384,
 						ECDSAWithP521AndSHA512,
@@ -1219,13 +1219,13 @@ func utlsIdToSpec(id ClientHelloID) (ClientHelloSpec, error) {
 				},
 				&KeyShareExtension{[]KeyShare{
 					{Group: X25519},
-					{Group: CurveP256}, //key_share
+					{Group: CurveP256}, // key_share
 				}},
 				&SupportedVersionsExtension{[]uint16{
-					VersionTLS13, //supported_versions
+					VersionTLS13, // supported_versions
 					VersionTLS12,
 				}},
-				&SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []SignatureScheme{ //signature_algorithms
+				&SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []SignatureScheme{ // signature_algorithms
 					ECDSAWithP256AndSHA256,
 					ECDSAWithP384AndSHA384,
 					ECDSAWithP521AndSHA512,
@@ -1238,11 +1238,11 @@ func utlsIdToSpec(id ClientHelloID) (ClientHelloSpec, error) {
 					ECDSAWithSHA1,
 					PKCS1WithSHA1,
 				}},
-				&PSKKeyExchangeModesExtension{[]uint8{ //psk_key_exchange_modes
+				&PSKKeyExchangeModesExtension{[]uint8{ // psk_key_exchange_modes
 					PskModeDHE,
 				}},
-				&FakeRecordSizeLimitExtension{Limit: 0x4001},             //record_size_limit
-				&UtlsPaddingExtension{GetPaddingLen: BoringPaddingStyle}, //padding
+				&FakeRecordSizeLimitExtension{Limit: 0x4001},             // record_size_limit
+				&UtlsPaddingExtension{GetPaddingLen: BoringPaddingStyle}, // padding
 			}}, nil
 	case HelloFirefox_105:
 		return ClientHelloSpec{

@@ -1,4 +1,4 @@
-package tls
+package utls
 
 import (
 	"encoding/json"
@@ -272,7 +272,7 @@ func (e *UtlsPreSharedKeyExtension) PatchBuiltHello(hello *PubClientHelloMsg) er
 	private.original = hello.Raw
 	private.pskBinders = e.Binders // set the placeholder to the private Hello
 
-	//--- mirror loadSession() begin ---//
+	// --- mirror loadSession() begin ---//
 	transcript := e.cipherSuite.hash.New()
 	helloBytes, err := private.marshalWithoutBinders() // no marshal() will be actually called, as we have set the field `raw`
 	if err != nil {
@@ -299,7 +299,7 @@ func (e *UtlsPreSharedKeyExtension) PatchBuiltHello(hello *PubClientHelloMsg) er
 		return errors.New("tls: internal error: failed to update binders")
 	}
 
-	//--- mirror loadSession() end ---//
+	// --- mirror loadSession() end ---//
 	e.Binders = pskBinders
 
 	// no need to care about other PSK related fields, they will be handled separately

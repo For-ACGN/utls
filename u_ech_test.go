@@ -1,4 +1,4 @@
-package tls_test
+package utls_test
 
 import (
 	"errors"

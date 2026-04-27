@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tls
+package utls
 
 import (
 	"encoding/json"
@@ -1907,7 +1907,7 @@ func (e *FakeDelegatedCredentialsExtension) Read(b []byte) (int, error) {
 func (e *FakeDelegatedCredentialsExtension) Write(b []byte) (int, error) {
 	fullLen := len(b)
 	extData := cryptobyte.String(b)
-	//https://datatracker.ietf.org/doc/html/draft-ietf-tls-subcerts-15#section-4.1.1
+	// https://datatracker.ietf.org/doc/html/draft-ietf-tls-subcerts-15#section-4.1.1
 	var supportedAlgs cryptobyte.String
 	if !extData.ReadUint16LengthPrefixed(&supportedAlgs) || supportedAlgs.Empty() {
 		return 0, errors.New("unable to read signature algorithms extension data")

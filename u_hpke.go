@@ -1,4 +1,4 @@
-package tls
+package utls
 
 import (
 	"github.com/refraction-networking/utls/internal/hpke"
