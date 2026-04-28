@@ -352,6 +352,11 @@ func (c *Conn) clientHandshake(ctx context.Context) (err error) {
 		return unexpectedMessageError(serverHello, msg)
 	}
 
+	err = c.onServerHelloMessage(serverHello)
+	if err != nil {
+		return err
+	}
+
 	if err := c.pickTLSVersion(serverHello); err != nil {
 		return err
 	}

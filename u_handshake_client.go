@@ -516,6 +516,11 @@ func (uc *UConn) clientHandshake(ctx context.Context) (err error) {
 		return unexpectedMessageError(serverHello, msg)
 	}
 
+	err = uc.onServerHelloMessage(serverHello)
+	if err != nil {
+		return err
+	}
+
 	if err := uc.pickTLSVersion(serverHello); err != nil {
 		return err
 	}
