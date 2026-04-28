@@ -903,6 +903,12 @@ type Config struct {
 	// clients, see the EncryptedClientHelloConfigList field.
 	EncryptedClientHelloKeys []EncryptedClientHelloKey
 
+	// OnClientHelloMessage is used to hook ClientHelloMessage after read handshake from client.
+	OnClientHelloMessage func(hello *ClientHelloMessage) error
+
+	// OnServerHelloMessage is used to hook ServerHelloMessage after read handshake from server.
+	OnServerHelloMessage func(hello *ServerHelloMessage) error
+
 	// mutex protects sessionTicketKeys and autoSessionTicketKeys.
 	mutex sync.RWMutex
 	// sessionTicketKeys contains zero or more ticket keys. If set, it means
