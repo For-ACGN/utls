@@ -490,6 +490,10 @@ func (uc *UConn) clientHandshake(ctx context.Context) (err error) {
 
 	uc.serverName = hello.serverName
 
+	if len(uc.config.Random) > 0 {
+		copy(hello.random, uc.config.Random)
+	}
+
 	if _, err := uc.writeHandshakeRecord(hello, nil); err != nil {
 		return err
 	}

@@ -118,9 +118,14 @@ func (c *Conn) makeClientHello() (*clientHelloMsg, *keySharePrivateKeys, *echCli
 		hello.cipherSuites = append(hello.cipherSuites, suiteId)
 	}
 
-	_, err := io.ReadFull(config.rand(), hello.random)
-	if err != nil {
-		return nil, nil, nil, errors.New("tls: short read from Rand: " + err.Error())
+	var err error
+	if len(config.Random) > 0 {
+		copy(hello.random, config.Random)
+	} else {
+		_, err = io.ReadFull(config.rand(), hello.random)
+		if err != nil {
+			return nil, nil, nil, errors.New("tls: short read from Rand: " + err.Error())
+		}
 	}
 
 	// A random session ID is used to detect when the server accepted a ticket
