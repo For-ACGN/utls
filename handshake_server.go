@@ -146,6 +146,11 @@ func (c *Conn) readClientHello(ctx context.Context) (*clientHelloMsg, *echServer
 		return nil, nil, unexpectedMessageError(clientHello, msg)
 	}
 
+	err = c.onClientHelloMessage(clientHello)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// ECH processing has to be done before we do any other negotiation based on
 	// the contents of the client hello, since we may swap it out completely.
 	var ech *echServerContext

@@ -602,6 +602,11 @@ func (hs *serverHandshakeStateTLS13) doHelloRetryRequest(selectedGroup CurveID) 
 		return nil, unexpectedMessageError(clientHello, msg)
 	}
 
+	err = c.onClientHelloMessage(clientHello)
+	if err != nil {
+		return nil, err
+	}
+
 	if hs.echContext != nil {
 		if len(clientHello.encryptedClientHello) == 0 {
 			c.sendAlert(alertMissingExtension)
