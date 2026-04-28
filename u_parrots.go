@@ -2976,16 +2976,16 @@ func ShuffleChromeTLSExtensions(exts []TLSExtension) []TLSExtension {
 	return exts
 }
 
-func (uconn *UConn) applyPresetByID(id ClientHelloID) (err error) {
+func (uc *UConn) applyPresetByID(id ClientHelloID) (err error) {
 
-	if uconn.clientHelloSpec == nil {
+	if uc.clientHelloSpec == nil {
 		var spec ClientHelloSpec
-		uconn.ClientHelloID = id
+		uc.ClientHelloID = id
 
 		// choose/generate the spec
 		switch id.Client {
 		case helloRandomized, helloRandomizedNoALPN, helloRandomizedALPN:
-			spec, err = uconn.generateRandomizedSpec()
+			spec, err = uc.generateRandomizedSpec()
 			if err != nil {
 				return err
 			}
@@ -2998,40 +2998,40 @@ func (uconn *UConn) applyPresetByID(id ClientHelloID) (err error) {
 			}
 		}
 
-		uconn.clientHelloSpec = &spec
+		uc.clientHelloSpec = &spec
 	}
 
-	return uconn.ApplyPreset(uconn.clientHelloSpec)
+	return uc.ApplyPreset(uc.clientHelloSpec)
 }
 
 // ApplyPreset should only be used in conjunction with HelloCustom to apply custom specs.
 // Fields of TLSExtensions that are slices/pointers are shared across different connections with
 // same ClientHelloSpec. It is advised to use different specs and avoid any shared state.
-func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
+func (uc *UConn) ApplyPreset(p *ClientHelloSpec) error {
 	var err error
 
-	err = uconn.SetTLSVers(p.TLSVersMin, p.TLSVersMax, p.Extensions)
+	err = uc.SetTLSVers(p.TLSVersMin, p.TLSVersMax, p.Extensions)
 	if err != nil {
 		return err
 	}
 
-	privateHello, clientKeySharePrivate, ech, err := uconn.makeClientHelloForApplyPreset()
+	privateHello, clientKeySharePrivate, ech, err := uc.makeClientHelloForApplyPreset()
 	if err != nil {
 		return err
 	}
-	uconn.HandshakeState.Hello = privateHello.getPublicPtr()
+	uc.HandshakeState.Hello = privateHello.getPublicPtr()
 	if clientKeySharePrivate != nil {
-		uconn.HandshakeState.State13.KeyShareKeys = clientKeySharePrivate.ToPublic()
+		uc.HandshakeState.State13.KeyShareKeys = clientKeySharePrivate.ToPublic()
 	} else {
-		uconn.HandshakeState.State13.KeyShareKeys = &KeySharePrivateKeys{}
+		uc.HandshakeState.State13.KeyShareKeys = &KeySharePrivateKeys{}
 	}
-	uconn.echCtx = ech
-	hello := uconn.HandshakeState.Hello
+	uc.echCtx = ech
+	hello := uc.HandshakeState.Hello
 
 	switch len(hello.Random) {
 	case 0:
 		hello.Random = make([]byte, 32)
-		_, err := io.ReadFull(uconn.config.rand(), hello.Random)
+		_, err := io.ReadFull(uc.config.rand(), hello.Random)
 		if err != nil {
 			return errors.New("tls: short read from Rand: " + err.Error())
 		}
@@ -3049,22 +3049,22 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 	// Currently, GREASE is assumed to come from BoringSSL
 	grease_bytes := make([]byte, 2*ssl_grease_last_index)
 	grease_extensions_seen := 0
-	_, err = io.ReadFull(uconn.config.rand(), grease_bytes)
+	_, err = io.ReadFull(uc.config.rand(), grease_bytes)
 	if err != nil {
 		return errors.New("tls: short read from Rand: " + err.Error())
 	}
-	for i := range uconn.greaseSeed {
-		uconn.greaseSeed[i] = binary.LittleEndian.Uint16(grease_bytes[2*i : 2*i+2])
+	for i := range uc.greaseSeed {
+		uc.greaseSeed[i] = binary.LittleEndian.Uint16(grease_bytes[2*i : 2*i+2])
 	}
-	if GetBoringGREASEValue(uconn.greaseSeed, ssl_grease_extension1) == GetBoringGREASEValue(uconn.greaseSeed, ssl_grease_extension2) {
-		uconn.greaseSeed[ssl_grease_extension2] ^= 0x1010
+	if GetBoringGREASEValue(uc.greaseSeed, ssl_grease_extension1) == GetBoringGREASEValue(uc.greaseSeed, ssl_grease_extension2) {
+		uc.greaseSeed[ssl_grease_extension2] ^= 0x1010
 	}
 
 	hello.CipherSuites = make([]uint16, len(p.CipherSuites))
 	copy(hello.CipherSuites, p.CipherSuites)
 	for i := range hello.CipherSuites {
 		if isGREASEUint16(hello.CipherSuites[i]) { // just in case the user set a GREASE value instead of unGREASEd
-			hello.CipherSuites[i] = GetBoringGREASEValue(uconn.greaseSeed, ssl_grease_cipher)
+			hello.CipherSuites[i] = GetBoringGREASEValue(uc.greaseSeed, ssl_grease_cipher)
 		}
 	}
 
@@ -3073,37 +3073,37 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 	// a compatibility measure (see RFC 8446, Section 4.1.2).
 	//
 	// The session ID is not set for QUIC connections (see RFC 9001, Section 8.4).
-	if uconn.quic == nil {
+	if uc.quic == nil {
 		var sessionID [32]byte
-		_, err = io.ReadFull(uconn.config.rand(), sessionID[:])
+		_, err = io.ReadFull(uc.config.rand(), sessionID[:])
 		if err != nil {
 			return err
 		}
-		uconn.HandshakeState.Hello.SessionId = sessionID[:]
+		uc.HandshakeState.Hello.SessionId = sessionID[:]
 	}
 
-	uconn.Extensions = make([]TLSExtension, len(p.Extensions))
-	copy(uconn.Extensions, p.Extensions)
+	uc.Extensions = make([]TLSExtension, len(p.Extensions))
+	copy(uc.Extensions, p.Extensions)
 
 	// Check whether NPN extension actually exists
 	var haveNPN bool
 
 	// reGrease, and point things to each other
-	for _, e := range uconn.Extensions {
+	for _, e := range uc.Extensions {
 		switch ext := e.(type) {
 		case *SNIExtension:
 			if ext.ServerName == "" {
-				ext.ServerName = uconn.config.ServerName
+				ext.ServerName = uc.config.ServerName
 			}
-			if uconn.config.EncryptedClientHelloConfigList != nil {
+			if uc.config.EncryptedClientHelloConfigList != nil {
 				ext.ServerName = string(ech.config.PublicName)
 			}
 		case *UtlsGREASEExtension:
 			switch grease_extensions_seen {
 			case 0:
-				ext.Value = GetBoringGREASEValue(uconn.greaseSeed, ssl_grease_extension1)
+				ext.Value = GetBoringGREASEValue(uc.greaseSeed, ssl_grease_extension1)
 			case 1:
-				ext.Value = GetBoringGREASEValue(uconn.greaseSeed, ssl_grease_extension2)
+				ext.Value = GetBoringGREASEValue(uc.greaseSeed, ssl_grease_extension2)
 				ext.Body = []byte{0}
 			default:
 				return errors.New("at most 2 grease extensions are supported")
@@ -3112,7 +3112,7 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 		case *SupportedCurvesExtension:
 			for i := range ext.Curves {
 				if isGREASEUint16(uint16(ext.Curves[i])) {
-					ext.Curves[i] = CurveID(GetBoringGREASEValue(uconn.greaseSeed, ssl_grease_group))
+					ext.Curves[i] = CurveID(GetBoringGREASEValue(uc.greaseSeed, ssl_grease_group))
 				}
 			}
 		case *KeyShareExtension:
@@ -3121,7 +3121,7 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 			for i := range ext.KeyShares {
 				curveID := ext.KeyShares[i].Group
 				if isGREASEUint16(uint16(curveID)) { // just in case the user set a GREASE value instead of unGREASEd
-					ext.KeyShares[i].Group = CurveID(GetBoringGREASEValue(uconn.greaseSeed, ssl_grease_group))
+					ext.KeyShares[i].Group = CurveID(GetBoringGREASEValue(uc.greaseSeed, ssl_grease_group))
 					continue
 				}
 				if len(ext.KeyShares[i].Data) > 1 {
@@ -3141,12 +3141,12 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 						}
 					}
 
-					ecdheKey, err := generateECDHEKey(uconn.config.rand(), X25519)
+					ecdheKey, err := generateECDHEKey(uc.config.rand(), X25519)
 					if err != nil {
 						return err
 					}
 					seed := make([]byte, mlkem.SeedSize)
-					if _, err := io.ReadFull(uconn.config.rand(), seed); err != nil {
+					if _, err := io.ReadFull(uc.config.rand(), seed); err != nil {
 						return err
 					}
 					mlkemKey, err := mlkem.NewDecapsulationKey768(seed)
@@ -3159,8 +3159,8 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 					} else {
 						ext.KeyShares[i].Data = append(mlkemKey.EncapsulationKey().Bytes(), ecdheKey.PublicKey().Bytes()...)
 					}
-					uconn.HandshakeState.State13.KeyShareKeys.Mlkem = mlkemKey
-					uconn.HandshakeState.State13.KeyShareKeys.MlkemEcdhe = ecdheKey
+					uc.HandshakeState.State13.KeyShareKeys.Mlkem = mlkemKey
+					uc.HandshakeState.State13.KeyShareKeys.MlkemEcdhe = ecdheKey
 					if isHybridReuse {
 						expectedClassical, _ := classicalCurveForHybrid(curveID)
 						reusableClassicalKeys[expectedClassical] = append(
@@ -3185,13 +3185,13 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 						ext.KeyShares[i].Data = reusedKey.PublicKey().Bytes()
 						if !preferredCurveIsSet {
 							// only do this once for the first non-grease curve
-							uconn.HandshakeState.State13.KeyShareKeys.Ecdhe = reusedKey
+							uc.HandshakeState.State13.KeyShareKeys.Ecdhe = reusedKey
 							preferredCurveIsSet = true
 						}
 						continue
 					}
 
-					ecdheKey, err := generateECDHEKey(uconn.config.rand(), curveID)
+					ecdheKey, err := generateECDHEKey(uc.config.rand(), curveID)
 					if err != nil {
 						return fmt.Errorf("unsupported Curve in KeyShareExtension: %v."+
 							"To mimic it, fill the Data(key) field manually", curveID)
@@ -3200,7 +3200,7 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 					ext.KeyShares[i].Data = ecdheKey.PublicKey().Bytes()
 					if !preferredCurveIsSet {
 						// only do this once for the first non-grease curve
-						uconn.HandshakeState.State13.KeyShareKeys.Ecdhe = ecdheKey
+						uc.HandshakeState.State13.KeyShareKeys.Ecdhe = ecdheKey
 						preferredCurveIsSet = true
 					}
 				}
@@ -3208,7 +3208,7 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 		case *SupportedVersionsExtension:
 			for i := range ext.Versions {
 				if isGREASEUint16(ext.Versions[i]) { // just in case the user set a GREASE value instead of unGREASEd
-					ext.Versions[i] = GetBoringGREASEValue(uconn.greaseSeed, ssl_grease_version)
+					ext.Versions[i] = GetBoringGREASEValue(uc.greaseSeed, ssl_grease_version)
 				}
 			}
 		case *NPNExtension:
@@ -3220,7 +3220,7 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 	// but NextProtos is also used by ALPN and our spec nmay not actually have a NPN extension
 	hello.NextProtoNeg = haveNPN
 
-	err = uconn.sessionController.syncSessionExts()
+	err = uc.sessionController.syncSessionExts()
 	if err != nil {
 		return err
 	}
@@ -3228,8 +3228,8 @@ func (uconn *UConn) ApplyPreset(p *ClientHelloSpec) error {
 	return nil
 }
 
-func (uconn *UConn) generateRandomizedSpec() (ClientHelloSpec, error) {
-	return generateRandomizedSpec(&uconn.ClientHelloID, uconn.serverName, uconn.config.NextProtos)
+func (uc *UConn) generateRandomizedSpec() (ClientHelloSpec, error) {
+	return generateRandomizedSpec(&uc.ClientHelloID, uc.serverName, uc.config.NextProtos)
 }
 
 func generateRandomizedSpec(

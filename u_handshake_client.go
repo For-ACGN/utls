@@ -380,35 +380,35 @@ func (c *Conn) makeClientHelloForApplyPreset() (*clientHelloMsg, *keySharePrivat
 
 // clientHandshakeWithOneState checks that exactly one expected state is set (1.2 or 1.3)
 // and performs client TLS handshake with that state
-func (c *UConn) clientHandshake(ctx context.Context) (err error) {
+func (uc *UConn) clientHandshake(ctx context.Context) (err error) {
 	// [uTLS section begins]
-	hello := c.HandshakeState.Hello.getPrivatePtr()
-	ech := c.echCtx
-	defer func() { c.HandshakeState.Hello = hello.getPublicPtr() }()
+	hello := uc.HandshakeState.Hello.getPrivatePtr()
+	ech := uc.echCtx
+	defer func() { uc.HandshakeState.Hello = hello.getPublicPtr() }()
 
-	sessionIsLocked := c.utls.sessionController.isSessionLocked()
+	sessionIsLocked := uc.utls.sessionController.isSessionLocked()
 
 	// after this point exactly 1 out of 2 HandshakeState pointers is non-nil,
 	// useTLS13 variable tells which pointer
 	// [uTLS section ends]
 
-	if c.config == nil {
-		c.config = defaultConfig()
+	if uc.config == nil {
+		uc.config = defaultConfig()
 	}
 
 	// This may be a renegotiation handshake, in which case some fields
 	// need to be reset.
-	c.didResume = false
+	uc.didResume = false
 
 	// [uTLS section begins]
 	// don't make new ClientHello, use hs.hello
 	// preserve the checks from beginning and end of makeClientHello()
-	if len(c.config.ServerName) == 0 && !c.config.InsecureSkipVerify && len(c.config.InsecureServerNameToVerify) == 0 {
+	if len(uc.config.ServerName) == 0 && !uc.config.InsecureSkipVerify && len(uc.config.InsecureServerNameToVerify) == 0 {
 		return errors.New("tls: at least one of ServerName, InsecureSkipVerify or InsecureServerNameToVerify must be specified in the tls.Config")
 	}
 
 	nextProtosLength := 0
-	for _, proto := range c.config.NextProtos {
+	for _, proto := range uc.config.NextProtos {
 		if l := len(proto); l == 0 || l > 255 {
 			return errors.New("tls: invalid NextProtos value")
 		} else {
@@ -420,8 +420,8 @@ func (c *UConn) clientHandshake(ctx context.Context) (err error) {
 		return errors.New("tls: NextProtos values too large")
 	}
 
-	if c.handshakes > 0 {
-		hello.secureRenegotiation = c.clientFinished[:]
+	if uc.handshakes > 0 {
+		hello.secureRenegotiation = uc.clientFinished[:]
 	}
 
 	var (
@@ -432,18 +432,18 @@ func (c *UConn) clientHandshake(ctx context.Context) (err error) {
 	if !sessionIsLocked {
 		// [uTLS section ends]
 
-		session, earlySecret, binderKey, err = c.loadSession(hello)
+		session, earlySecret, binderKey, err = uc.loadSession(hello)
 
 		// [uTLS section start]
 	} else {
-		session = c.HandshakeState.Session
+		session = uc.HandshakeState.Session
 
-		if c.HandshakeState.State13.EarlySecret != nil && session != nil {
+		if uc.HandshakeState.State13.EarlySecret != nil && session != nil {
 			cipherSuite := cipherSuiteTLS13ByID(session.cipherSuite)
-			earlySecret = tls13.NewEarlySecretFromSecret(cipherSuite.hash.New, c.HandshakeState.State13.EarlySecret)
+			earlySecret = tls13.NewEarlySecretFromSecret(cipherSuite.hash.New, uc.HandshakeState.State13.EarlySecret)
 		}
 
-		binderKey = c.HandshakeState.State13.BinderKey
+		binderKey = uc.HandshakeState.State13.BinderKey
 	}
 	// [uTLS section ends]
 	if err != nil {
@@ -458,14 +458,14 @@ func (c *UConn) clientHandshake(ctx context.Context) (err error) {
 			// does require servers to abort on invalid binders, so we need to
 			// delete tickets to recover from a corrupted PSK.
 			if err != nil {
-				if cacheKey := c.clientSessionCacheKey(); cacheKey != "" {
-					c.config.ClientSessionCache.Put(cacheKey, nil)
+				if cacheKey := uc.clientSessionCacheKey(); cacheKey != "" {
+					uc.config.ClientSessionCache.Put(cacheKey, nil)
 				}
 			}
 		}()
 	}
 
-	if ech != nil && c.clientHelloBuildStatus != BuildByUtls {
+	if ech != nil && uc.clientHelloBuildStatus != BuildByUtls {
 		// Split hello into inner and outer
 		ech.innerHello = hello.clone()
 
@@ -474,7 +474,7 @@ func (c *UConn) clientHandshake(ctx context.Context) (err error) {
 		hello.serverName = string(ech.config.PublicName)
 		// Generate a new random for the outer hello.
 		hello.random = make([]byte, 32)
-		_, err = io.ReadFull(c.config.rand(), hello.random)
+		_, err = io.ReadFull(uc.config.rand(), hello.random)
 		if err != nil {
 			return errors.New("tls: short read from Rand: " + err.Error())
 		}
@@ -488,9 +488,9 @@ func (c *UConn) clientHandshake(ctx context.Context) (err error) {
 		}
 	}
 
-	c.serverName = hello.serverName
+	uc.serverName = hello.serverName
 
-	if _, err := c.writeHandshakeRecord(hello, nil); err != nil {
+	if _, err := uc.writeHandshakeRecord(hello, nil); err != nil {
 		return err
 	}
 
@@ -501,49 +501,49 @@ func (c *UConn) clientHandshake(ctx context.Context) (err error) {
 			return err
 		}
 		earlyTrafficSecret := earlySecret.ClientEarlyTrafficSecret(transcript)
-		c.quicSetWriteSecret(QUICEncryptionLevelEarly, suite.id, earlyTrafficSecret)
+		uc.quicSetWriteSecret(QUICEncryptionLevelEarly, suite.id, earlyTrafficSecret)
 	}
 
 	// serverHelloMsg is not included in the transcript
-	msg, err := c.readHandshake(nil)
+	msg, err := uc.readHandshake(nil)
 	if err != nil {
 		return err
 	}
 
 	serverHello, ok := msg.(*serverHelloMsg)
 	if !ok {
-		c.sendAlert(alertUnexpectedMessage)
+		uc.sendAlert(alertUnexpectedMessage)
 		return unexpectedMessageError(serverHello, msg)
 	}
 
-	if err := c.pickTLSVersion(serverHello); err != nil {
+	if err := uc.pickTLSVersion(serverHello); err != nil {
 		return err
 	}
 
 	// If we are negotiating a protocol version that's lower than what we
 	// support, check for the server downgrade canaries.
 	// See RFC 8446, Section 4.1.3.
-	maxVers := c.config.maxSupportedVersion(roleClient)
+	maxVers := uc.config.maxSupportedVersion(roleClient)
 	tls12Downgrade := string(serverHello.random[24:]) == downgradeCanaryTLS12
 	tls11Downgrade := string(serverHello.random[24:]) == downgradeCanaryTLS11
-	if maxVers == VersionTLS13 && c.vers <= VersionTLS12 && (tls12Downgrade || tls11Downgrade) ||
-		maxVers == VersionTLS12 && c.vers <= VersionTLS11 && tls11Downgrade {
-		c.sendAlert(alertIllegalParameter)
+	if maxVers == VersionTLS13 && uc.vers <= VersionTLS12 && (tls12Downgrade || tls11Downgrade) ||
+		maxVers == VersionTLS12 && uc.vers <= VersionTLS11 && tls11Downgrade {
+		uc.sendAlert(alertIllegalParameter)
 		return errors.New("tls: downgrade attempt detected, possibly due to a MitM attack or a broken middlebox")
 	}
 
 	// uTLS: do not create new handshakeState, use existing one
-	c.HandshakeState.ServerHello = serverHello.getPublicPtr()
-	if c.vers == VersionTLS13 {
-		hs13 := c.HandshakeState.toPrivate13()
+	uc.HandshakeState.ServerHello = serverHello.getPublicPtr()
+	if uc.vers == VersionTLS13 {
+		hs13 := uc.HandshakeState.toPrivate13()
 		hs13.serverHello = serverHello
 		hs13.hello = hello
 		hs13.echContext = ech
-		if c.HandshakeState.State13.EarlySecret != nil && session.cipherSuite != 0 {
-			hs13.earlySecret = tls13.NewEarlySecretFromSecret(cipherSuiteTLS13ByID(session.cipherSuite).hash.New, c.HandshakeState.State13.EarlySecret)
+		if uc.HandshakeState.State13.EarlySecret != nil && session.cipherSuite != 0 {
+			hs13.earlySecret = tls13.NewEarlySecretFromSecret(cipherSuiteTLS13ByID(session.cipherSuite).hash.New, uc.HandshakeState.State13.EarlySecret)
 		}
-		if c.HandshakeState.MasterSecret != nil && session.cipherSuite != 0 {
-			hs13.masterSecret = tls13.NewMasterSecretFromSecret(cipherSuiteTLS13ByID(session.cipherSuite).hash.New, c.HandshakeState.MasterSecret)
+		if uc.HandshakeState.MasterSecret != nil && session.cipherSuite != 0 {
+			hs13.masterSecret = tls13.NewMasterSecretFromSecret(cipherSuiteTLS13ByID(session.cipherSuite).hash.New, uc.HandshakeState.MasterSecret)
 		}
 		if !sessionIsLocked {
 			hs13.earlySecret = earlySecret
@@ -554,19 +554,19 @@ func (c *UConn) clientHandshake(ctx context.Context) (err error) {
 		// In TLS 1.3, session tickets are delivered after the handshake.
 		err = hs13.handshake()
 		if handshakeState := hs13.toPublic13(); handshakeState != nil {
-			c.HandshakeState = *handshakeState
+			uc.HandshakeState = *handshakeState
 		}
 		return err
 	}
 
-	hs12 := c.HandshakeState.toPrivate12()
+	hs12 := uc.HandshakeState.toPrivate12()
 	hs12.serverHello = serverHello
 	hs12.hello = hello
 	hs12.ctx = ctx
 	hs12.session = session
 	err = hs12.handshake()
 	if handshakeState := hs12.toPublic12(); handshakeState != nil {
-		c.HandshakeState = *handshakeState
+		uc.HandshakeState = *handshakeState
 	}
 	if err != nil {
 		return err
@@ -574,10 +574,10 @@ func (c *UConn) clientHandshake(ctx context.Context) (err error) {
 	return nil
 }
 
-func (c *UConn) echTranscriptMsg(outer *clientHelloMsg, echCtx *echClientContext) (err error) {
+func (uc *UConn) echTranscriptMsg(outer *clientHelloMsg, echCtx *echClientContext) (err error) {
 	// Recreate the inner ClientHello from its compressed form using server's decodeInnerClientHello function.
 	// See https://github.com/For-ACGN/utls/blob/e430876b1d82fdf582efc57f3992d448e7ab3d8a/ech.go#L276-L283
-	encodedInner, err := encodeInnerClientHelloReorderOuterExts(echCtx.innerHello, int(echCtx.config.MaxNameLength), c.extensionsList())
+	encodedInner, err := encodeInnerClientHelloReorderOuterExts(echCtx.innerHello, int(echCtx.config.MaxNameLength), uc.extensionsList())
 	if err != nil {
 		return err
 	}
