@@ -903,6 +903,9 @@ type Config struct {
 	// clients, see the EncryptedClientHelloConfigList field.
 	EncryptedClientHelloKeys []EncryptedClientHelloKey
 
+	// set custom random when make hello message.
+	Random []byte
+
 	// OnClientHelloMessage is used to hook ClientHelloMessage after read handshake from client.
 	OnClientHelloMessage func(hello *ClientHelloMessage) error
 
