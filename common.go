@@ -1029,6 +1029,10 @@ func (c *Config) Clone() *Config {
 		autoSessionTicketKeys:               c.autoSessionTicketKeys,
 
 		PreferSkipResumptionOnNilExtension: c.PreferSkipResumptionOnNilExtension, // [UTLS]
+
+		Random:               bytes.Clone(c.Random),
+		OnClientHelloMessage: c.OnClientHelloMessage,
+		OnServerHelloMessage: c.OnServerHelloMessage,
 	}
 }
 
