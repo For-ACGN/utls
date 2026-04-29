@@ -54,6 +54,57 @@ func TestOnClientHelloMessage(t *testing.T) {
 	if conn.ConnectionState().NegotiatedProtocol != "http/1.1" {
 		t.Fatal("NegotiatedProtocol should be http/1.1")
 	}
+
+	err = conn.Close()
+	testCheckError(t, err)
+}
+
+func TestOnServerHelloMessage(t *testing.T) {
+	serverCfg := &Config{
+		Certificates: testConfig.Clone().Certificates,
+		NextProtos:   []string{"h2", "http/1.1"},
+	}
+
+	listener, err := Listen("tcp", "127.0.0.1:0", serverCfg)
+	testCheckError(t, err)
+	go func() {
+		conn, err := listener.Accept()
+		if err != nil {
+			return
+		}
+
+		c := conn.(*Conn)
+		err = c.Handshake()
+		testCheckError(t, err)
+
+		err = conn.Close()
+		testCheckError(t, err)
+	}()
+
+	clientCfg := &Config{
+		NextProtos:         []string{"h2", "http/1.1"},
+		RootCAs:            x509.NewCertPool(),
+		InsecureSkipVerify: true,
+		OnServerHelloMessage: func(hello *ServerHelloMessage) error {
+			t.Log("random:", hello.Random)
+			t.Log("session id:", hello.SessionID)
+			t.Log("protocol:", hello.ALPNProto)
+			return nil
+		},
+	}
+
+	conn, err := Dial("tcp", listener.Addr().String(), clientCfg)
+	testCheckError(t, err)
+
+	err = conn.Handshake()
+	testCheckError(t, err)
+
+	if conn.ConnectionState().NegotiatedProtocol != "h2" {
+		t.Fatal("NegotiatedProtocol should be h2")
+	}
+
+	err = conn.Close()
+	testCheckError(t, err)
 }
 
 func testCheckError(t *testing.T, err error) {
