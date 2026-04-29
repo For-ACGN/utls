@@ -1,1 +1,63 @@
 package utls
+
+import (
+	"bytes"
+	"crypto/x509"
+	"testing"
+)
+
+func TestOnClientHelloMessage(t *testing.T) {
+	serverCfg := &Config{
+		Certificates: testConfig.Clone().Certificates,
+		NextProtos:   []string{"h2", "http/1.1"},
+		OnClientHelloMessage: func(hello *ClientHelloMessage) error {
+			secret := make([]byte, 32)
+			secret[0] = 0xFF
+			if bytes.Equal(hello.Random, secret) {
+				hello.ALPNProto = []string{"http/1.1"}
+			}
+			return nil
+		},
+	}
+
+	listener, err := Listen("tcp", "127.0.0.1:0", serverCfg)
+	testCheckError(t, err)
+	go func() {
+		conn, err := listener.Accept()
+		if err != nil {
+			return
+		}
+
+		c := conn.(*Conn)
+		err = c.Handshake()
+		testCheckError(t, err)
+
+		err = conn.Close()
+		testCheckError(t, err)
+	}()
+
+	clientCfg := &Config{
+		NextProtos:         []string{"h2", "http/1.1"},
+		RootCAs:            x509.NewCertPool(),
+		InsecureSkipVerify: true,
+	}
+	// set secret random data
+	clientCfg.Random = make([]byte, 32)
+	clientCfg.Random[0] = 0xFF
+
+	conn, err := Dial("tcp", listener.Addr().String(), clientCfg)
+	testCheckError(t, err)
+
+	err = conn.Handshake()
+	testCheckError(t, err)
+
+	if conn.ConnectionState().NegotiatedProtocol != "http/1.1" {
+		t.Fatal("NegotiatedProtocol should be http/1.1")
+	}
+}
+
+func testCheckError(t *testing.T, err error) {
+	if err != nil {
+		t.Fatal(err)
+	}
+}
