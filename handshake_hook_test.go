@@ -3,6 +3,7 @@ package utls
 import (
 	"bytes"
 	"crypto/x509"
+	"net"
 	"testing"
 )
 
@@ -45,12 +46,12 @@ func TestOnClientHelloMessage(t *testing.T) {
 	clientCfg.Random = make([]byte, 32)
 	clientCfg.Random[0] = 0xFF
 
-	conn, err := Dial("tcp", listener.Addr().String(), clientCfg)
+	raw, err := net.Dial("tcp", listener.Addr().String())
 	testCheckError(t, err)
+	conn := UClient(raw, clientCfg, HelloFirefox_Auto)
 
 	err = conn.Handshake()
 	testCheckError(t, err)
-
 	if conn.ConnectionState().NegotiatedProtocol != "http/1.1" {
 		t.Fatal("NegotiatedProtocol should be http/1.1")
 	}
@@ -93,12 +94,12 @@ func TestOnServerHelloMessage(t *testing.T) {
 		},
 	}
 
-	conn, err := Dial("tcp", listener.Addr().String(), clientCfg)
+	raw, err := net.Dial("tcp", listener.Addr().String())
 	testCheckError(t, err)
+	conn := UClient(raw, clientCfg, HelloFirefox_Auto)
 
 	err = conn.Handshake()
 	testCheckError(t, err)
-
 	if conn.ConnectionState().NegotiatedProtocol != "h2" {
 		t.Fatal("NegotiatedProtocol should be h2")
 	}
