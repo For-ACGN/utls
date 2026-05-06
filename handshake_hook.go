@@ -1,5 +1,9 @@
 package utls
 
+import (
+	"slices"
+)
+
 type ClientHelloMessage struct {
 	Random    []byte
 	SessionID []byte
@@ -18,9 +22,9 @@ func (c *Conn) onClientHelloMessage(hello *clientHelloMsg) error {
 	}
 	// clone client hello message
 	msg := &ClientHelloMessage{
-		Random:    hello.random,
-		SessionID: hello.sessionId,
-		ALPNProto: hello.alpnProtocols,
+		Random:    slices.Clone(hello.random),
+		SessionID: slices.Clone(hello.sessionId),
+		ALPNProto: slices.Clone(hello.alpnProtocols),
 	}
 	err := c.config.OnClientHelloMessage(msg)
 	if err != nil {
@@ -39,8 +43,8 @@ func (c *Conn) onServerHelloMessage(hello *serverHelloMsg) error {
 	}
 	// clone server hello message
 	msg := &ServerHelloMessage{
-		Random:    hello.random,
-		SessionID: hello.sessionId,
+		Random:    slices.Clone(hello.random),
+		SessionID: slices.Clone(hello.sessionId),
 		ALPNProto: hello.alpnProtocol,
 	}
 	err := c.config.OnServerHelloMessage(msg)
