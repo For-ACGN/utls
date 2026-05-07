@@ -26,17 +26,19 @@ func TestOnClientHelloMessage(t *testing.T) {
 	listener, err := Listen("tcp", "127.0.0.1:0", serverCfg)
 	testCheckError(t, err)
 	go func() {
-		conn, err := listener.Accept()
-		if err != nil {
-			return
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+
+			c := conn.(*Conn)
+			err = c.Handshake()
+			testCheckError(t, err)
+
+			err = conn.Close()
+			testCheckError(t, err)
 		}
-
-		c := conn.(*Conn)
-		err = c.Handshake()
-		testCheckError(t, err)
-
-		err = conn.Close()
-		testCheckError(t, err)
 	}()
 
 	clientCfg := &Config{
@@ -76,6 +78,9 @@ func TestOnClientHelloMessage(t *testing.T) {
 		err = conn.Close()
 		testCheckError(t, err)
 	})
+
+	err = listener.Close()
+	testCheckError(t, err)
 }
 
 func TestOnServerHelloMessage(t *testing.T) {
@@ -87,17 +92,19 @@ func TestOnServerHelloMessage(t *testing.T) {
 	listener, err := Listen("tcp", "127.0.0.1:0", serverCfg)
 	testCheckError(t, err)
 	go func() {
-		conn, err := listener.Accept()
-		if err != nil {
-			return
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+
+			c := conn.(*Conn)
+			err = c.Handshake()
+			testCheckError(t, err)
+
+			err = conn.Close()
+			testCheckError(t, err)
 		}
-
-		c := conn.(*Conn)
-		err = c.Handshake()
-		testCheckError(t, err)
-
-		err = conn.Close()
-		testCheckError(t, err)
 	}()
 
 	hook := func(hello *ServerHelloMessage) error {
@@ -141,6 +148,9 @@ func TestOnServerHelloMessage(t *testing.T) {
 		err = conn.Close()
 		testCheckError(t, err)
 	})
+
+	err = listener.Close()
+	testCheckError(t, err)
 }
 
 func testCheckError(t *testing.T, err error) {
