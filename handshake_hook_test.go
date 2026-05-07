@@ -46,11 +46,12 @@ func TestOnClientHelloMessage(t *testing.T) {
 		RootCAs:            x509.NewCertPool(),
 		InsecureSkipVerify: true,
 	}
-	// set secret random data
-	clientCfg.Random = make([]byte, 32)
-	clientCfg.Random[0] = 0xFF
 
 	t.Run("Dial", func(t *testing.T) {
+		// set secret random data
+		clientCfg.Random = make([]byte, 32)
+		clientCfg.Random[0] = 0xFF
+
 		conn, err := Dial("tcp", listener.Addr().String(), clientCfg.Clone())
 		testCheckError(t, err)
 
@@ -68,6 +69,13 @@ func TestOnClientHelloMessage(t *testing.T) {
 		raw, err := net.Dial("tcp", listener.Addr().String())
 		testCheckError(t, err)
 		conn := UClient(raw, clientCfg.Clone(), HelloFirefox_Auto)
+
+		random := make([]byte, 32)
+		random[0] = 0xFF
+		err = conn.BuildHandshakeState()
+		testCheckError(t, err)
+		err = conn.SetClientRandom(random)
+		testCheckError(t, err)
 
 		err = conn.Handshake()
 		testCheckError(t, err)
