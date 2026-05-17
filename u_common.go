@@ -602,17 +602,19 @@ var (
 	HelloRandomizedNoALPN = ClientHelloID{helloRandomizedNoALPN, helloAutoVers, nil, nil}
 
 	// The rest will will parrot given browser.
-	HelloFirefox_Auto = HelloFirefox_150
-	HelloFirefox_55   = ClientHelloID{helloFirefox, "55", nil, nil}
-	HelloFirefox_56   = ClientHelloID{helloFirefox, "56", nil, nil}
-	HelloFirefox_63   = ClientHelloID{helloFirefox, "63", nil, nil}
-	HelloFirefox_65   = ClientHelloID{helloFirefox, "65", nil, nil}
-	HelloFirefox_99   = ClientHelloID{helloFirefox, "99", nil, nil}
-	HelloFirefox_102  = ClientHelloID{helloFirefox, "102", nil, nil}
-	HelloFirefox_105  = ClientHelloID{helloFirefox, "105", nil, nil}
-	HelloFirefox_120  = ClientHelloID{helloFirefox, "120", nil, nil}
-	HelloFirefox_148  = ClientHelloID{helloFirefox, "148", nil, nil}
-	HelloFirefox_150  = ClientHelloID{helloFirefox, "150", nil, nil}
+	HelloFirefox_Auto     = HelloFirefox_150
+	HelloFirefox_PSK_Auto = HelloFirefox_150_PSK
+	HelloFirefox_55       = ClientHelloID{helloFirefox, "55", nil, nil}
+	HelloFirefox_56       = ClientHelloID{helloFirefox, "56", nil, nil}
+	HelloFirefox_63       = ClientHelloID{helloFirefox, "63", nil, nil}
+	HelloFirefox_65       = ClientHelloID{helloFirefox, "65", nil, nil}
+	HelloFirefox_99       = ClientHelloID{helloFirefox, "99", nil, nil}
+	HelloFirefox_102      = ClientHelloID{helloFirefox, "102", nil, nil}
+	HelloFirefox_105      = ClientHelloID{helloFirefox, "105", nil, nil}
+	HelloFirefox_120      = ClientHelloID{helloFirefox, "120", nil, nil}
+	HelloFirefox_148      = ClientHelloID{helloFirefox, "148", nil, nil}
+	HelloFirefox_150      = ClientHelloID{helloFirefox, "150", nil, nil}
+	HelloFirefox_150_PSK  = ClientHelloID{helloFirefox, "150_PSK", nil, nil}
 
 	HelloChrome_Auto        = HelloChrome_133
 	HelloChrome_58          = ClientHelloID{helloChrome, "58", nil, nil}
